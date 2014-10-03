@@ -1,0 +1,99 @@
+<html>
+  <head>
+    <link rel="stylesheet" href="http://cdn.leafletjs.com/leaflet-0.7.3/leaflet.css" />
+    <script src="http://cdn.leafletjs.com/leaflet-0.7.3/leaflet.js"></script>
+    <script type="text/javascript" src="http://maps.stamen.com/js/tile.stamen.js?v1.3.0"></script>
+    <script src="http://code.jquery.com/jquery-1.10.2.min.js"></script>
+    <script src="leaflet.markercluster.js"></script>
+    <link rel="stylesheet" href="MarkerCluster.Default.css" />
+    <link rel="stylesheet" href="MarkerCluster.css" />
+    <link rel="stylesheet" href="custom_markers.css" />
+    <style type='text/css'>
+      body {
+          padding: 0;
+          margin: 0;
+      }
+      html, body, #map {
+          height: 100%;
+      }
+    </style>
+  <body>
+
+    <div id='map'></div>
+
+    <script>
+      var map = L.map('map').setView([38.58, -104.81], 9);
+
+      map.addLayer(new L.StamenTileLayer("toner"));
+
+      var point_url = "http://localhost:8080/geoserver/sanborn/ows?service=WFS&version=1.0.0&request=GetFeature&typeName=sanborn%3Atest_points&outputformat=text/javascript"
+
+      //$.getJSON('./points.json', function(data) {
+      $.ajax({
+          type: 'GET',
+          url: point_url,
+          async: false,
+          jsonpCallback: 'parseResponse',
+          contentType: 'application/json',
+          dataType: 'jsonp',
+          success: function(data) {
+            var options = {
+                  disableClusteringAtZoom: 12,
+                  maxClusterRadius: 100,
+                  singleMarkerMode: true,
+                  iconCreateFunction: function(cluster) {
+                    var classes = ["cluster"],
+                        count,
+                        digits,
+                        status,
+                        markers,
+                        class_color;
+
+                    // Get the number of items in the cluster
+                    count = cluster.getChildCount();
+
+                    // Figure out how many digits long the number is
+                    digits = (count+'').length;
+
+                    if (count == 1) {
+                      classes.push("single");
+                    } else {
+                      classes.push("digits-"+digits);
+                    }
+
+                    markers = cluster.getAllChildMarkers();
+                    class_color = "";
+                    for(var i = 0, num_of_markers = markers.length; i < num_of_markers; i++) {
+                      status = markers[i].feature.properties
+                                 .status
+                      switch(status) {
+                        case 1:
+                          class_color = (class_color == "" ? "flown" : class_color);
+                          break;
+                        case 2:
+                          class_color = "error";
+                          break;
+                        default:
+                          class_color = "unflown";
+                      }
+
+                      if (status == 2) break;
+                    }
+                    classes.push(class_color);
+
+                    return new L.DivIcon({
+                      html: count == 1 ? "" : count,
+                      className: classes.join(" "),
+                      iconSize: null
+                    });
+                  }
+                },
+                markers = new L.MarkerClusterGroup(options),
+                points_layer = L.geoJson(data);
+            markers.addLayer(points_layer);
+            map.addLayer(markers);
+          }
+      });
+    </script>
+  </body>
+</html>

@@ -1,0 +1,101 @@
+<html>
+  <head>
+    <link rel="stylesheet" href="http://cdn.leafletjs.com/leaflet-0.7.3/leaflet.css" />
+    <script src="http://cdn.leafletjs.com/leaflet-0.7.3/leaflet.js"></script>
+    <script type="text/javascript" src="http://maps.stamen.com/js/tile.stamen.js?v1.3.0"></script>
+    <script src="http://code.jquery.com/jquery-1.10.2.min.js"></script>
+    <script src="leaflet.markercluster.js"></script>
+    <link rel="stylesheet" href="MarkerCluster.Default.css" />
+    <link rel="stylesheet" href="MarkerCluster.css" />
+    <link rel="stylesheet" href="custom_markers.css" />
+    <style type='text/css'>
+      body {
+          padding: 0;
+          margin: 0;
+      }
+      html, body, #map {
+          height: 100%;
+      }
+    </style>
+  </head>
+  <body>
+
+    <div id='map'></div>
+
+    <script>
+      var map = L.map('map').setView([38.58, -104.81], 11);
+
+      map.addLayer(new L.StamenTileLayer("toner"));
+
+      var lines_url = "http://localhost:8080/geoserver/sanborn/ows?service=WFS&version=1.0.0&request=GetFeature&typeName=sanborn%3Atest_lines&outputformat=text/javascript";
+      $.ajax({
+          type: 'GET',
+          url: lines_url,
+          async: false,
+          jsonpCallback: 'parseResponse',
+          contentType: 'application/json',
+          dataType: 'jsonp',
+          success: function(data) {
+            displayLines(data);
+            queryStatus();
+          }
+      });
+
+      function displayLines(data) {
+        var lines_layer = L.geoJson(data, {
+          style: function(feature) {
+            var color, opacity
+            if (feature.properties.complete) {
+              color = "#2d84c8";
+              opacity = 0.2;
+            } else {
+              color = "#ABABAB";
+              opacity = 1;
+            }
+            return {
+              color: color,
+              opacity: opacity
+            };
+          }
+        });
+        map.addLayer(lines_layer);
+      }
+
+      function queryStatus() {
+        var status_points_url = "http://localhost:8080/geoserver/sanborn/ows?service=WFS&version=1.0.0&request=GetFeature&typeName=sanborn%3Atest_status&outputformat=text/javascript";
+        $.ajax({
+            type: 'GET',
+            url: status_points_url,
+            async: false,
+            jsonpCallback: 'parseResponse',
+            contentType: 'application/json',
+            dataType: 'jsonp',
+            success: function(data) {
+              var points_layer = L.geoJson(data, {
+                style: function(feature) {
+                  var color;
+                  switch(feature.properties.status) {
+                    case 1:
+                      color = "#2d84c8";
+                      break;
+                    case 2:
+                      color = "#E80C0C";
+                      break;
+                    default:
+                      color = "#ABABAB"
+                  }
+                  console.log(feature.properties.status);
+                  console.log(color);
+                  return { color: color, opacity: 1 };
+                },
+                pointToLayer: function(feature, latlng) {
+                  return new L.CircleMarker(latlng, { radius: 4, fillOpacity: 0.85});
+                }
+              });
+              map.addLayer(points_layer);
+            }
+        });
+      }
+    </script>
+  </body>
+</html>
