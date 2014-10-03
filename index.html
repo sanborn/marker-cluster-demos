@@ -7,6 +7,7 @@
     <script src="leaflet.markercluster.js"></script>
     <link rel="stylesheet" href="MarkerCluster.Default.css" />
     <link rel="stylesheet" href="MarkerCluster.css" />
+    <link rel="stylesheet" href="custom_markers.css" />
     <style type='text/css'>
       body {
           padding: 0;
@@ -21,7 +22,7 @@
     <div id='map'></div>
 
     <script>
-      var map = L.map('map').setView([38.58, -104.81], 10);
+      var map = L.map('map').setView([38.58, -104.81], 9);
 
       map.addLayer(new L.StamenTileLayer("toner"));
 
@@ -36,8 +37,45 @@
           contentType: 'application/json',
           dataType: 'jsonp',
           success: function(data) {
-            var markers = new L.MarkerClusterGroup();
-            var points_layer = L.geoJson(data);
+            var options = {
+                  disableClusteringAtZoom: 12,
+                  maxClusterRadius: 100,
+                  singleMarkerMode: true,
+                  iconCreateFunction: function(cluster) {
+                    var classes = ["cluster"], count, digits, status;
+
+                    // Get the number of items in the cluster
+                    count = cluster.getChildCount();
+
+                    // Figure out how many digits long the number is
+                    digits = (count+'').length;
+
+                    if (count == 1) {
+                      classes.push("single");
+                      status = cluster
+                                 .getAllChildMarkers()[0]
+                                 .feature.properties
+                                 .status
+                      switch(status) {
+                        case 1:
+                          classes.push("flown");
+                          break;
+                        case 2:
+                          classes.push("error");
+                      }
+                    } else {
+                      classes.push("digits-"+digits);
+                    }
+
+                    return new L.DivIcon({
+                      html: count == 1 ? "" : count,
+                      className: classes.join(" "),
+                      iconSize: null
+                    });
+                  }
+                },
+                markers = new L.MarkerClusterGroup(options),
+                points_layer = L.geoJson(data);
             markers.addLayer(points_layer);
             map.addLayer(markers);
           }
