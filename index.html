@@ -42,7 +42,12 @@
                   maxClusterRadius: 100,
                   singleMarkerMode: true,
                   iconCreateFunction: function(cluster) {
-                    var classes = ["cluster"], count, digits, status;
+                    var classes = ["cluster"],
+                        count,
+                        digits,
+                        status,
+                        markers,
+                        class_color;
 
                     // Get the number of items in the cluster
                     count = cluster.getChildCount();
@@ -52,20 +57,29 @@
 
                     if (count == 1) {
                       classes.push("single");
-                      status = cluster
-                                 .getAllChildMarkers()[0]
-                                 .feature.properties
-                                 .status
-                      switch(status) {
-                        case 1:
-                          classes.push("flown");
-                          break;
-                        case 2:
-                          classes.push("error");
-                      }
                     } else {
                       classes.push("digits-"+digits);
                     }
+
+                    markers = cluster.getAllChildMarkers();
+                    class_color = "";
+                    for(var i = 0, num_of_markers = markers.length; i < num_of_markers; i++) {
+                      status = markers[i].feature.properties
+                                 .status
+                      switch(status) {
+                        case 1:
+                          class_color = (class_color == "" ? "flown" : class_color);
+                          break;
+                        case 2:
+                          class_color = "error";
+                          break;
+                        default:
+                          class_color = "unflown";
+                      }
+
+                      if (status == 2) break;
+                    }
+                    classes.push(class_color);
 
                     return new L.DivIcon({
                       html: count == 1 ? "" : count,
