@@ -23,7 +23,7 @@
     <div id='map'></div>
 
     <script>
-      var map = L.map('map').setView([38.58, -104.81], 11);
+      var map = L.map('map').setView([38.58, -104.81], 10);
 
       map.addLayer(new L.StamenTileLayer("toner"));
 
@@ -71,7 +71,7 @@
             contentType: 'application/json',
             dataType: 'jsonp',
             success: function(data) {
-              var points_layer = L.geoJson(data, {
+              /*var points_layer = L.geoJson(data, {
                 style: function(feature) {
                   var color;
                   switch(feature.properties.status) {
@@ -92,7 +92,70 @@
                   return new L.CircleMarker(latlng, { radius: 4, fillOpacity: 0.85});
                 }
               });
-              map.addLayer(points_layer);
+              map.addLayer(points_layer);*/
+              var options = {
+                  disableClusteringAtZoom: 12,
+                  maxClusterRadius: 50,
+                  singleMarkerMode: true,
+                  iconCreateFunction: function(cluster) {
+                    var classes = ["cluster"],
+                        count,
+                        digits,
+                        status,
+                        markers,
+                        class_color,
+                        num_of_markers,
+                        error_count = 0,
+                        html_text = "";
+
+                    // Get the number of items in the cluster
+                    count = cluster.getChildCount();
+
+                    // Figure out how many digits long the number is
+                    digits = (count+'').length;
+
+                    if (count == 1) {
+                      classes.push("single");
+                    } else {
+                      classes.push("digits-"+digits);
+                    }
+
+                    markers = cluster.getAllChildMarkers();
+                    class_color = "";
+                    num_of_markers = markers.length;
+                    for(var i = 0; i < num_of_markers; i++) {
+                      status = markers[i].feature.properties
+                                 .status
+                      switch(status) {
+                        case 1:
+                          class_color = (class_color == "" ? "flown" : class_color);
+                          break;
+                        case 2:
+                          class_color = "error";
+                          error_count++;
+                          break;
+                        default:
+                          class_color = "unflown";
+                      }
+                    }
+                    classes.push(class_color);
+
+                    if (num_of_markers > 1) {
+                      html_text =
+                        (error_count == 0 ? num_of_markers : error_count);
+                    }
+
+                    return new L.DivIcon({
+                      html: html_text,
+                      className: classes.join(" "),
+                      iconSize: null
+                    });
+                  }
+                },
+                markers = new L.MarkerClusterGroup(options),
+                points_layer = L.geoJson(data);
+              markers.addLayer(points_layer);
+              map.addLayer(markers);
             }
         });
       }
