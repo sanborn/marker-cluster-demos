@@ -41,20 +41,43 @@
           }
       });
 
+      var legend = L.control({position: 'bottomright'});
+
+      legend.onAdd = function(map) {
+
+        var div = L.DomUtil.create('div', 'legend'),
+            line_items = [
+              { color: '15ad09', text: 'Passed Final QC'},
+              { color: '2d84c8', text: 'Passed Field QC'},
+              { color: 'e80c0c', text: 'Failed Final QC'},
+              { color: 'ababab', text: 'Not Flown'}
+            ]
+
+        div.innerHTML =
+          "<div><i class='circle'></i> Photocenter</div><div><i class='line'></i> Flight Line</div><hr>";
+        for (var i = 0, num_of_lines = line_items.length; i < num_of_lines; i++) {
+          div.innerHTML +=
+            "<div><i style='background: #" + line_items[i].color + "'></i> " + line_items[i].text + "</div>";
+        }
+
+        return div;
+      };
+
+      legend.addTo(map);
+
       function displayLines(data) {
         var lines_layer = L.geoJson(data, {
           style: function(feature) {
             var color, opacity
             if (feature.properties.complete) {
-              color = "#2d84c8";
-              opacity = 0.2;
+              color = "#15AD09";
             } else {
               color = "#ABABAB";
-              opacity = 1;
             }
             return {
               color: color,
-              opacity: opacity
+              opacity: 0.6,
+              fillOpacity: 0.6
             };
           }
         });
@@ -71,28 +94,6 @@
             contentType: 'application/json',
             dataType: 'jsonp',
             success: function(data) {
-              /*var points_layer = L.geoJson(data, {
-                style: function(feature) {
-                  var color;
-                  switch(feature.properties.status) {
-                    case 1:
-                      color = "#2d84c8";
-                      break;
-                    case 2:
-                      color = "#E80C0C";
-                      break;
-                    default:
-                      color = "#ABABAB"
-                  }
-                  console.log(feature.properties.status);
-                  console.log(color);
-                  return { color: color, opacity: 1 };
-                },
-                pointToLayer: function(feature, latlng) {
-                  return new L.CircleMarker(latlng, { radius: 4, fillOpacity: 0.85});
-                }
-              });
-              map.addLayer(points_layer);*/
               var options = {
                   disableClusteringAtZoom: 12,
                   maxClusterRadius: 50,
