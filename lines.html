@@ -27,20 +27,6 @@
 
       map.addLayer(new L.StamenTileLayer("toner"));
 
-      var lines_url = "http://localhost:8080/geoserver/sanborn/ows?service=WFS&version=1.0.0&request=GetFeature&typeName=sanborn%3Atest_lines&outputformat=text/javascript";
-      $.ajax({
-          type: 'GET',
-          url: lines_url,
-          async: false,
-          jsonpCallback: 'parseResponse',
-          contentType: 'application/json',
-          dataType: 'jsonp',
-          success: function(data) {
-            displayLines(data);
-            queryStatus();
-          }
-      });
-
       var legend = L.control({position: 'bottomright'});
 
       legend.onAdd = function(map) {
@@ -64,6 +50,24 @@
       };
 
       legend.addTo(map);
+
+      queryLines();
+
+      function queryLines() {
+        var lines_url = "http://localhost:8080/geoserver/sanborn/ows?service=WFS&version=1.0.0&request=GetFeature&typeName=sanborn%3Atest_lines&outputformat=text/javascript";
+        $.ajax({
+            type: 'GET',
+            url: lines_url,
+            async: false,
+            jsonpCallback: 'parseResponse',
+            contentType: 'application/json',
+            dataType: 'jsonp',
+            success: function(data) {
+              displayLines(data);
+              queryStatus();
+            }
+        });
+      }
 
       function displayLines(data) {
         var lines_layer = L.geoJson(data, {
@@ -94,71 +98,75 @@
             contentType: 'application/json',
             dataType: 'jsonp',
             success: function(data) {
-              var options = {
-                  disableClusteringAtZoom: 12,
-                  maxClusterRadius: 50,
-                  singleMarkerMode: true,
-                  iconCreateFunction: function(cluster) {
-                    var classes = ["cluster"],
-                        count,
-                        digits,
-                        status,
-                        markers,
-                        class_color,
-                        num_of_markers,
-                        error_count = 0,
-                        html_text = "";
-
-                    // Get the number of items in the cluster
-                    count = cluster.getChildCount();
-
-                    // Figure out how many digits long the number is
-                    digits = (count+'').length;
-
-                    if (count == 1) {
-                      classes.push("single");
-                    } else {
-                      classes.push("digits-"+digits);
-                    }
-
-                    markers = cluster.getAllChildMarkers();
-                    class_color = "";
-                    num_of_markers = markers.length;
-                    for(var i = 0; i < num_of_markers; i++) {
-                      status = markers[i].feature.properties
-                                 .status
-                      switch(status) {
-                        case 1:
-                          class_color = (class_color == "" ? "flown" : class_color);
-                          break;
-                        case 2:
-                          class_color = "error";
-                          error_count++;
-                          break;
-                        default:
-                          class_color = "unflown";
-                      }
-                    }
-                    classes.push(class_color);
-
-                    if (num_of_markers > 1) {
-                      html_text =
-                        (error_count == 0 ? num_of_markers : error_count);
-                    }
-
-                    return new L.DivIcon({
-                      html: html_text,
-                      className: classes.join(" "),
-                      iconSize: null
-                    });
-                  }
-                },
-                markers = new L.MarkerClusterGroup(options),
-                points_layer = L.geoJson(data);
-              markers.addLayer(points_layer);
-              map.addLayer(markers);
+              displayStatus(data);
             }
-        });
+          });
+      }
+
+      function displayStatus(data) {
+        var options = {
+            disableClusteringAtZoom: 12,
+            maxClusterRadius: 50,
+            singleMarkerMode: true,
+            iconCreateFunction: function(cluster) {
+              var classes = ["cluster"],
+                  count,
+                  digits,
+                  status,
+                  markers,
+                  class_color,
+                  num_of_markers,
+                  error_count = 0,
+                  html_text = "";
+
+              // Get the number of items in the cluster
+              count = cluster.getChildCount();
+
+              // Figure out how many digits long the number is
+              digits = (count+'').length;
+
+              if (count == 1) {
+                classes.push("single");
+              } else {
+                classes.push("digits-"+digits);
+              }
+
+              markers = cluster.getAllChildMarkers();
+              class_color = "";
+              num_of_markers = markers.length;
+              for(var i = 0; i < num_of_markers; i++) {
+                status = markers[i].feature.properties
+                            .status
+                switch(status) {
+                  case 1:
+                    class_color = (class_color == "" ? "flown" : class_color);
+                    break;
+                  case 2:
+                    class_color = "error";
+                    error_count++;
+                    break;
+                  default:
+                    class_color = "unflown";
+                }
+              }
+              classes.push(class_color);
+
+              if (num_of_markers > 1) {
+                html_text =
+                  (error_count == 0 ? num_of_markers : error_count);
+              }
+
+              return new L.DivIcon({
+                html: html_text,
+                className: classes.join(" "),
+                iconSize: null
+              });
+            }
+          },
+          markers = new L.MarkerClusterGroup(options),
+          points_layer = L.geoJson(data);
+        markers.addLayer(points_layer);
+        map.addLayer(markers);
       }
     </script>
   </body>
