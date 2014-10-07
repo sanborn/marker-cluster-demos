@@ -40,7 +40,7 @@
             ]
 
         div.innerHTML =
-          "<div><i class='circle'></i> Photocenter</div><div><i class='line'></i> Flight Line</div><hr>";
+          "<div><i class='circle'></i> Photocenter (not flown | passed | failed)</div><div><i class='line'></i> Flight Line</div><hr>";
         for (var i = 0, num_of_lines = line_items.length; i < num_of_lines; i++) {
           div.innerHTML +=
             "<div><i style='background: #" + line_items[i].color + "'></i> " + line_items[i].text + "</div>";
@@ -106,7 +106,7 @@
       function displayStatus(data) {
         var options = {
             disableClusteringAtZoom: 12,
-            maxClusterRadius: 70,
+            maxClusterRadius: 100,
             singleMarkerMode: true,
             iconCreateFunction: function(cluster) {
               var classes = ["cluster-stat"],
@@ -133,7 +133,7 @@
               }
 
               if (num_of_markers > 1) {
-                html_text = "<span class='error-font'>" + error_count + "</span>|<span class='unflown-font'>" + unflown_count + "</span>|<span class='flown-font'>" + flown_count + "</span>";
+                html_text = "<span class='unflown-font'>" + unflown_count + "</span>|<span class='flown-font'>" + flown_count + "</span>|<span class='error-font'>" + error_count + "</span>";
               }
               else {
                 classes.push("single-stat");
