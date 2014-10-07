@@ -1,0 +1,177 @@
+<html>
+  <head>
+    <link rel="stylesheet" href="http://cdn.leafletjs.com/leaflet-0.7.3/leaflet.css" />
+    <script src="http://cdn.leafletjs.com/leaflet-0.7.3/leaflet.js"></script>
+    <script type="text/javascript" src="http://maps.stamen.com/js/tile.stamen.js?v1.3.0"></script>
+    <script src="http://code.jquery.com/jquery-1.10.2.min.js"></script>
+    <script src="leaflet.markercluster.js"></script>
+    <link rel="stylesheet" href="MarkerCluster.Default.css" />
+    <link rel="stylesheet" href="MarkerCluster.css" />
+    <link rel="stylesheet" href="custom_markers.css" />
+    <style type='text/css'>
+      body {
+          padding: 0;
+          margin: 0;
+      }
+      html, body, #map {
+          height: 100%;
+      }
+    </style>
+  </head>
+  <body>
+
+    <div id='map'></div>
+
+    <script>
+      var map = L.map('map').setView([38.58, -104.81], 10);
+
+      map.addLayer(new L.StamenTileLayer("toner"));
+
+      var legend = L.control({position: 'bottomright'});
+
+      legend.onAdd = function(map) {
+
+        var div = L.DomUtil.create('div', 'legend'),
+            line_items = [
+              { color: '15ad09', text: 'Passed Final QC'},
+              { color: '2d84c8', text: 'Passed Field QC'},
+              { color: 'e80c0c', text: 'Failed Final QC'},
+              { color: 'ababab', text: 'Not Flown'}
+            ]
+
+        div.innerHTML =
+          "<div><i class='circle'></i> Photocenter</div><div><i class='line'></i> Flight Line</div><hr>";
+        for (var i = 0, num_of_lines = line_items.length; i < num_of_lines; i++) {
+          div.innerHTML +=
+            "<div><i style='background: #" + line_items[i].color + "'></i> " + line_items[i].text + "</div>";
+        }
+
+        return div;
+      };
+
+      legend.addTo(map);
+
+      queryLines();
+
+      function queryLines() {
+        var lines_url = "http://localhost:8080/geoserver/sanborn/ows?service=WFS&version=1.0.0&request=GetFeature&typeName=sanborn%3Atest_lines&outputformat=text/javascript";
+        $.ajax({
+            type: 'GET',
+            url: lines_url,
+            async: false,
+            jsonpCallback: 'parseResponse',
+            contentType: 'application/json',
+            dataType: 'jsonp',
+            success: function(data) {
+              displayLines(data);
+              queryStatus();
+            }
+        });
+      }
+
+      function displayLines(data) {
+        var lines_layer = L.geoJson(data, {
+          style: function(feature) {
+            var color, opacity
+            if (feature.properties.complete) {
+              color = "#15AD09";
+            } else {
+              color = "#ABABAB";
+            }
+            return {
+              color: color,
+              opacity: 0.6,
+              fillOpacity: 0.6
+            };
+          }
+        });
+        map.addLayer(lines_layer);
+      }
+
+      function queryStatus() {
+        var status_points_url = "http://localhost:8080/geoserver/sanborn/ows?service=WFS&version=1.0.0&request=GetFeature&typeName=sanborn%3Atest_status_inclusive&outputformat=text/javascript";
+        $.ajax({
+            type: 'GET',
+            url: status_points_url,
+            async: false,
+            jsonpCallback: 'parseResponse',
+            contentType: 'application/json',
+            dataType: 'jsonp',
+            success: function(data) {
+              displayStatus(data);
+            }
+          });
+      }
+
+      function displayStatus(data) {
+        var options = {
+            disableClusteringAtZoom: 12,
+            maxClusterRadius: 50,
+            singleMarkerMode: true,
+            iconCreateFunction: function(cluster) {
+              var classes = ["cluster"],
+                  count,
+                  digits,
+                  status,
+                  markers,
+                  class_color,
+                  num_of_markers,
+                  error_count = 0,
+                  unflown_count = 0,
+                  html_text = "";
+
+              // Get the number of items in the cluster
+              count = cluster.getChildCount();
+
+              // Figure out how many digits long the number is
+              digits = (count+'').length;
+
+              if (count == 1) {
+                classes.push("single");
+              } else {
+                classes.push("digits-"+digits);
+              }
+
+              markers = cluster.getAllChildMarkers();
+              class_color = "";
+              num_of_markers = markers.length;
+              for(var i = 0; i < num_of_markers; i++) {
+                status = markers[i].feature.properties
+                            .status
+
+                if (status == 2) error_count++;
+                else if (status == 0) unflown_count++;
+              }
+
+              if (error_count > 0) {
+                html_text = error_count;
+                class_color = "error";
+              }
+              else if (unflown_count > 0) {
+                html_text = unflown_count;
+                class_color = "unflown";
+              }
+              else {
+                html_text = num_of_markers;
+                class_color = "flown";
+              }
+
+              html_text = num_of_markers > 1 ? html_text : "";
+
+              classes.push(class_color);
+
+              return new L.DivIcon({
+                html: html_text,
+                className: classes.join(" "),
+                iconSize: null
+              });
+            }
+          },
+          markers = new L.MarkerClusterGroup(options),
+          points_layer = L.geoJson(data);
+        markers.addLayer(points_layer);
+        map.addLayer(markers);
+      }
+    </script>
+  </body>
+</html>
