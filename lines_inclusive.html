@@ -54,7 +54,7 @@
       queryLines();
 
       function queryLines() {
-        var lines_url = "http://library-stage:8080/geoserver/sanborn/ows?service=WFS&version=1.0.0&request=GetFeature&typeName=sanborn%3Atest_lines&outputformat=text/javascript";
+        var lines_url = "http://demo.sanborn.com/geoserver/sanborn/ows?service=WFS&version=1.0.0&request=GetFeature&typeName=sanborn%3Atest_lines&outputformat=text/javascript";
         $.ajax({
             type: 'GET',
             url: lines_url,
@@ -89,7 +89,7 @@
       }
 
       function queryStatus() {
-        var status_points_url = "http://library-stage:8080/geoserver/sanborn/ows?service=WFS&version=1.0.0&request=GetFeature&typeName=sanborn%3Atest_status_inclusive&outputformat=text/javascript";
+        var status_points_url = "http://demo.sanborn.com/geoserver/sanborn/ows?service=WFS&version=1.0.0&request=GetFeature&typeName=sanborn%3Atest_status_inclusive&outputformat=text/javascript";
         $.ajax({
             type: 'GET',
             url: status_points_url,
